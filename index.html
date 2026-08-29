@@ -20,13 +20,28 @@
   <div id="authModal"
     style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
     <div class="card" style="padding: 2rem; max-width:400px; width:90%; text-align:center;">
-      <h2>Welcome to AtmosFit</h2>
-      <p>Sign in to personalize your avatar and wardrobe.</p>
-      <button class="btn btn-primary" id="googleSignInBtn" style="width:100%; margin: 1rem 0;"
-        onclick="mockGoogleSignIn()">Sign in with Google</button>
+      <div id="authForms">
+        <h2>Welcome to AtmosFit</h2>
+        <p>Sign in to personalize your avatar and wardrobe.</p>
+        
+        <div id="authError" style="color: #ef4444; margin-bottom: 1rem; font-size: 0.9rem; display:none;"></div>
+        
+        <input type="email" id="authEmail" placeholder="Email Address"
+          style="width:100%; padding: 0.9rem; margin-bottom: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);" />
+        
+        <input type="password" id="authPassword" placeholder="Password"
+          style="width:100%; padding: 0.9rem; margin-bottom: 1rem; border-radius: var(--radius); border: 1px solid var(--border);" />
+        
+        <div style="display:flex; gap:0.5rem; flex-direction:column;">
+          <button class="btn btn-primary" id="loginBtn" style="width:100%;" onclick="handleLogin()">Log In</button>
+          <button class="btn" id="signupBtn" style="width:100%; background:var(--card); border:1px solid var(--border);" onclick="handleSignup()">Sign Up</button>
+        </div>
+      </div>
+      
       <div id="genderSelection" style="display:none;">
         <h3>Select your Gender</h3>
-        <div style="display:flex; gap:1rem; justify-content:center; margin-top:1rem;">
+        <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">Help us recommend the best outfits.</p>
+        <div style="display:flex; gap:1rem; justify-content:center;">
           <button class="btn" style="background:var(--card); border:1px solid var(--border);"
             onclick="selectGender('male')">Male</button>
           <button class="btn" style="background:var(--card); border:1px solid var(--border);"
@@ -67,7 +82,10 @@
           </svg></div>
         <div class="logo-name">Atmos<span>Fit</span></div>
       </div>
-      <div class="date-chip" id="dateChip">Loading...</div>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <div class="date-chip" id="dateChip">Loading...</div>
+        <button class="btn" id="logoutBtn" style="background:transparent; border:1px solid var(--border); color:var(--text); padding:0.25rem 0.75rem; font-size:0.8rem; display:none;" onclick="handleLogout()">Logout</button>
+      </div>
     </div>
     <div id="app">
       <div class="card welcome-card" id="welcomeState">
@@ -194,6 +212,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/HACKATHON-PROJECT/app.js"></script>
 </body>
 
