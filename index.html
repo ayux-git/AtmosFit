@@ -1,92 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AtmosFit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/style.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/HACKATHON-PROJECT/style.css" />
 </head>
+
 <body>
   <!-- <div class="cloud" style="top:8%">☁️</div>
   <div class="cloud" style="top:22%">🌤️</div> -->
 
+  <!-- Auth Modal -->
+  <div id="authModal"
+    style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+    <div class="card" style="padding: 2rem; max-width:400px; width:90%; text-align:center;">
+      <h2>Welcome to AtmosFit</h2>
+      <p>Sign in to personalize your avatar and wardrobe.</p>
+      <button class="btn btn-primary" id="googleSignInBtn" style="width:100%; margin: 1rem 0;"
+        onclick="mockGoogleSignIn()">Sign in with Google</button>
+      <div id="genderSelection" style="display:none;">
+        <h3>Select your Gender</h3>
+        <div style="display:flex; gap:1rem; justify-content:center; margin-top:1rem;">
+          <button class="btn" style="background:var(--card); border:1px solid var(--border);"
+            onclick="selectGender('male')">Male</button>
+          <button class="btn" style="background:var(--card); border:1px solid var(--border);"
+            onclick="selectGender('female')">Female</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Banner -->
+  <div id="notificationBanner"
+    style="display:none; position:fixed; top:0; left:0; right:0; background:var(--accent); color:white; padding:1rem; text-align:center; z-index:1000; font-weight:bold;">
+    Sudden Weather Change Alert!
+  </div>
+
   <div class="page-wrap">
     <div class="topbar">
       <div class="logo">
-        <div class="logo-mark"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="m500-40-60-60 60-60 60 60-60 60Zm-138-60-42-42 118-118 42 42-118 118Zm258-60-60-60 60-60 60 60-60 60Zm-360 0-60-60 60-60 60 60-60 60Zm40-160q-91 0-155.5-64.5T80-540q0-83 55-145t136-73q32-57 87.5-89.5T480-880q90 0 156.5 57.5T717-679q69 6 116 57t47 122q0 75-52.5 127.5T700-320H300Zm0-80h400q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-40q0-66-47-113t-113-47q-48 0-87.5 26T333-704l-10 24h-25q-57 2-97.5 42.5T160-540q0 58 41 99t99 41Zm180-200Z"/></svg></div>
-      <div class="logo-name">Atmos<span>Fit</span></div>
-    </div>
-    <div class="date-chip" id="dateChip">Loading...</div>
-  </div>
-  <div id="app">
-    <div class="card welcome-card" id="welcomeState">
-      <div class="welcome-icon">&#127757;</div>
-      <div class="welcome-title">What should I wear today?</div>
-      <div class="welcome-desc">I'll check real-time weather at your exact location and suggest the perfect outfit — plus remind you if you need an umbrella.</div>
-    </div>
-    <div class="cta-row" id="welcomeCta" style="margin-bottom:1rem">
-      <button class="btn btn-primary" onclick="fetchWeather()">&#128205; Detect My Location</button>
-    </div>
-    <div id="loadingState" style="display:none">
-      <div class="card loading-state">
-        <div class="spinner"></div>
-        <div class="loading-title" id="loadingMsg">Getting your location...</div>
-        <div class="loading-sub">This takes just a few seconds</div>
+        <div class="logo-mark"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+            width="24px" fill="#e3e3e3">
+            <path
+              d="m500-40-60-60 60-60 60 60-60 60Zm-138-60-42-42 118-118 42 42-118 118Zm258-60-60-60 60-60 60 60-60 60Zm-360 0-60-60 60-60 60 60-60 60Zm40-160q-91 0-155.5-64.5T80-540q0-83 55-145t136-73q32-57 87.5-89.5T480-880q90 0 156.5 57.5T717-679q69 6 116 57t47 122q0 75-52.5 127.5T700-320H300Zm0-80h400q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-40q0-66-47-113t-113-47q-48 0-87.5 26T333-704l-10 24h-25q-57 2-97.5 42.5T160-540q0 58 41 99t99 41Zm180-200Z" />
+          </svg></div>
+        <div class="logo-name">Atmos<span>Fit</span></div>
       </div>
+      <div class="date-chip" id="dateChip">Loading...</div>
     </div>
-    <div id="errorState" style="display:none">
-      <div class="error-state">
-        <div class="error-icon">&#9888;&#65039;</div>
-        <div class="error-title" id="errorTitle">Something went wrong</div>
-        <div class="error-desc" id="errorDesc"></div>
+    <div id="app">
+      <div class="card welcome-card" id="welcomeState">
+        <div class="welcome-icon">&#127757;</div>
+        <div class="welcome-title">What should I wear today?</div>
+        <div class="welcome-desc">I'll check real-time weather at your exact location and suggest the perfect outfit —
+          plus remind you if you need an umbrella.</div>
       </div>
-      <div class="cta-row" style="margin-top:.75rem">
-        <button class="btn btn-primary" onclick="fetchWeather()">&#128260; Try Again</button>
+      <div class="cta-row" id="welcomeCta" style="margin-bottom:1rem; flex-direction: column; gap: 0.5rem;">
+        <button class="btn btn-primary" onclick="fetchWeather()">&#128205; Detect My Location</button>
+        <div style="display: flex; gap: 0.5rem; width: 100%;">
+          <input type="text" id="manualLocation" placeholder="Or enter city name..."
+            style="flex: 1; padding: 0.9rem; border-radius: var(--radius); border: 1px solid var(--border);" />
+          <button class="btn" style="background: var(--card); border: 1px solid var(--border);"
+            onclick="fetchManualWeather()">Search</button>
+        </div>
       </div>
-    </div>
-    <div id="weatherResult" style="display:none">
-      <div class="card loc-strip" id="locStrip">
-        <div class="live-dot"></div>
-        <div class="loc-name" id="locName">Fetching location...</div>
-        <div class="loc-coords" id="locCoords"></div>
+      <div id="loadingState" style="display:none">
+        <div class="card loading-state">
+          <div class="spinner"></div>
+          <div class="loading-title" id="loadingMsg">Getting your location...</div>
+          <div class="loading-sub">This takes just a few seconds</div>
+        </div>
       </div>
-      <div class="card wx-card" style="margin-bottom:1rem">
-        <div class="wx-main">
-          <div class="wx-left">
-            <div class="wx-temp-row">
-              <div class="wx-temp" id="wxTemp">--</div>
-              <div class="wx-unit">&deg;C</div>
+      <div id="errorState" style="display:none">
+        <div class="error-state">
+          <div class="error-icon">&#9888;&#65039;</div>
+          <div class="error-title" id="errorTitle">Something went wrong</div>
+          <div class="error-desc" id="errorDesc"></div>
+        </div>
+        <div class="cta-row" style="margin-top:.75rem">
+          <button class="btn btn-primary" onclick="fetchWeather()">&#128260; Try Again</button>
+        </div>
+      </div>
+      <div id="weatherResult" style="display:none">
+        <div class="card loc-strip" id="locStrip">
+          <div class="live-dot"></div>
+          <div class="loc-name" id="locName">Fetching location...</div>
+          <div class="loc-coords" id="locCoords"></div>
+        </div>
+        <div class="card wx-card" style="margin-bottom:1rem">
+          <div class="wx-main">
+            <div class="wx-left">
+              <div class="wx-temp-row">
+                <div class="wx-temp" id="wxTemp">--</div>
+                <div class="wx-unit">&deg;C</div>
+              </div>
+              <div class="wx-condition" id="wxCondition">--</div>
+              <div class="wx-meta" id="wxMeta">--</div>
             </div>
-            <div class="wx-condition" id="wxCondition">--</div>
-            <div class="wx-meta" id="wxMeta">--</div>
+            <div class="wx-icon" id="wxIcon">&#127777;&#65039;</div>
           </div>
-          <div class="wx-icon" id="wxIcon">&#127777;&#65039;</div>
         </div>
-      </div>
-      <div class="section-label">Conditions</div>
-      <div class="stat-pills" id="statPills"></div>
-      <div class="umbrella-alert" id="umbrellaAlert" style="display:none">
-        <div class="alert-ico" id="alertIco"></div>
-        <div class="alert-body">
-          <div class="alert-title" id="alertTitle"></div>
-          <div class="alert-desc" id="alertDesc"></div>
+        <div class="section-label">Conditions</div>
+        <div class="stat-pills" id="statPills"></div>
+        <div class="umbrella-alert" id="umbrellaAlert" style="display:none">
+          <div class="alert-ico" id="alertIco"></div>
+          <div class="alert-body">
+            <div class="alert-title" id="alertTitle"></div>
+            <div class="alert-desc" id="alertDesc"></div>
+          </div>
         </div>
-      </div>
-      <div class="section-label">Today's Outfit</div>
-      <div class="outfit-card">
-        <div class="outfit-chips" id="outfitChips"></div>
-        <div class="outfit-text" id="outfitText">--</div>
-      </div>
-      <div class="cta-row">
-        <button class="btn btn-primary" onclick="fetchWeather()">&#128260; Refresh</button>
-        <!-- <button class="btn btn-secondary" onclick="shareWeather()">&#128228; Share</button> -->
+        <div class="section-label">Hourly Forecast</div>
+        <div class="hourly-scroll" id="hourlyForecast"
+          style="display: flex; overflow-x: auto; gap: 0.5rem; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        </div>
+        <div class="section-label">Today's Outfit</div>
+        <div class="outfit-card">
+          <div class="outfit-chips" id="outfitChips"></div>
+          <div class="outfit-text" id="outfitText">--</div>
+        </div>
+        <div class="section-label">Your Avatar</div>
+        <div class="card"
+          style="margin-bottom:1rem; height: 400px; overflow:hidden; position:relative; display:flex; justify-content:center; align-items:center; background:#f0f0f0;">
+          <iframe id="avatarFrame" style="width:100%; height:100%; border:none;" src=""></iframe>
+          <div id="avatarLoading" style="position:absolute; pointer-events:none;">Loading 3D Avatar...</div>
+        </div>
+
+        <div class="section-label">My Wardrobe</div>
+        <div class="card" style="margin-bottom:1rem; padding:1.5rem;">
+          <div id="wardrobeItems" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="newWardrobeItem" placeholder="e.g. Red Beanie"
+              style="flex:1; padding:0.5rem; border:1px solid var(--border); border-radius:var(--radius);" />
+            <button class="btn btn-primary" style="padding:0.5rem 1rem;" onclick="addWardrobeItem()">Add</button>
+          </div>
+        </div>
+
+        <div class="cta-row">
+          <button class="btn btn-primary" onclick="fetchWeather()">&#128260; Refresh</button>
+          <!-- <button class="btn btn-secondary" onclick="shareWeather()">&#128228; Share</button> -->
+        </div>
       </div>
     </div>
+    <footer>
+      Created by : Rishi, Yachika, Yashita and Ayush
+      <div style="margin-top: 0.5rem;"><a href="#" onclick="openFeedback(event)">Give us Feedback</a></div>
+    </footer>
   </div>
-  <footer>Created by : Rishi, Yachika, Yashita and Ayush</footer>
-</div>
-<script src="app.js"></script>
+  <!-- Chatbot FAB and Panel -->
+  <div id="chatFab"
+    style="position:fixed; bottom: 2rem; right: 2rem; width: 50px; height: 50px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items:center; justify-content:center; font-size: 1.5rem; cursor:pointer; box-shadow: var(--shadow-md); z-index:100;"
+    onclick="toggleChat()">💬</div>
+  <div id="chatPanel" class="card"
+    style="display:none; position:fixed; bottom: 5rem; right: 2rem; width: 300px; height: 400px; z-index:100; flex-direction:column; overflow:hidden;">
+    <div
+      style="background:var(--accent); color:white; padding: 1rem; font-weight:bold; display:flex; justify-content:space-between;">
+      <span>Atmos AI</span>
+      <span style="cursor:pointer;" onclick="toggleChat()">✕</span>
+    </div>
+    <div id="chatMessages"
+      style="flex:1; padding: 1rem; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem;">
+      <div style="background:var(--bg); padding:0.5rem; border-radius:var(--radius); max-width:80%;">Hello! Ask me about
+        the weather or what to wear.</div>
+    </div>
+    <div style="padding: 0.5rem; border-top:1px solid var(--border); display:flex; gap:0.5rem;">
+      <input type="text" id="chatInput" placeholder="Type a message..."
+        style="flex:1; padding:0.5rem; border:1px solid var(--border); border-radius:var(--radius);"
+        onkeypress="if(event.key === 'Enter') sendMessage()" />
+      <button class="btn btn-primary" style="padding:0.5rem 1rem;" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script src="/HACKATHON-PROJECT/app.js"></script>
 </body>
+
 </html>

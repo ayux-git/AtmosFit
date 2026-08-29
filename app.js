@@ -1,4 +1,4 @@
-﻿/* WeatherFit — app.js */
+/* WeatherFit — app.js */
 
 // Date chip
 (function(){
@@ -120,6 +120,91 @@ function renderUmbrella(u){
   document.getElementById("alertDesc").innerHTML=u.desc;
 }
 
+function renderHourly(hourlyData) {
+  var el = document.getElementById("hourlyForecast");
+  if(!el) return;
+  var html = "";
+  for(var i=0; i<12; i++) {
+    var time = new Date(hourlyData.time[i]);
+    var hourStr = time.getHours() + ":00";
+    var temp = Math.round(hourlyData.temperature_2m[i]);
+    var code = hourlyData.weather_code[i];
+    var decoded = decodeWMO(code);
+    html += '<div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:0.8rem; text-align:center; min-width:70px; flex-shrink:0;">';
+    html += '<div style="font-size:0.8rem; color:var(--muted); margin-bottom:0.3rem;">' + hourStr + '</div>';
+    html += '<div style="font-size:1.5rem; margin-bottom:0.3rem;">' + decoded.e + '</div>';
+    html += '<div style="font-weight:600;">' + temp + '°</div>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function fetchWeatherData(lat, lon, locName) {
+  setLoading("Fetching live weather...");
+  var url="https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon
+    +"&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,precipitation"
+    +"&hourly=temperature_2m,weather_code,precipitation_probability"
+    +"&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min,precipitation_sum"
+    +"&timezone=auto&forecast_days=2";
+  fetch(url).then(function(r){
+    if(!r.ok) throw new Error("Weather API error ("+r.status+")");
+    return r.json();
+  }).then(function(wx){
+    var cur=wx.current, daily=wx.daily, hourly=wx.hourly;
+    var temp=Math.round(cur.temperature_2m);
+    var feels=cur.apparent_temperature;
+    var hum=cur.relative_humidity_2m;
+    var wind=cur.wind_speed_10m;
+    var wdir=cur.wind_direction_10m;
+    var code=cur.weather_code;
+    var prob=daily.precipitation_probability_max?daily.precipitation_probability_max[0]:null;
+    var mm=daily.precipitation_sum?daily.precipitation_sum[0]:0;
+    var tmax=Math.round(daily.temperature_2m_max?daily.temperature_2m_max[0]:temp);
+    var tmin=Math.round(daily.temperature_2m_min?daily.temperature_2m_min[0]:temp);
+    var decoded=decodeWMO(code);
+    var outfit=buildOutfit({temp:temp,feelsLike:feels,humidity:hum,windKph:wind,precipProb:prob,precipMm:mm,wmoCode:code});
+
+    document.getElementById("locName").textContent="📍 "+locName;
+    document.getElementById("locCoords").textContent=lat.toFixed(2)+"°N, "+lon.toFixed(2)+"°E";
+    document.getElementById("wxTemp").textContent=temp;
+    document.getElementById("wxIcon").textContent=decoded.e;
+    document.getElementById("wxCondition").textContent=decoded.e+" "+decoded.l;
+    document.getElementById("wxMeta").textContent="Feels like "+Math.round(feels)+"°C · "+tmin+"° / "+tmax+"° today";
+
+    renderStats([
+      {icon:"💧",val:hum+"%",label:"Humidity"},
+      {icon:"🌬️",val:Math.round(wind)+" km/h",label:"Wind "+windDir(wdir)},
+      {icon:"🌡️",val:tmin+"° / "+tmax+"°",label:"Low / High"},
+      {icon:"☔",val:prob!==null?prob+"%":(mm.toFixed(1)+" mm"),label:"Rain chance"},
+      {icon:"💦",val:mm.toFixed(1)+" mm",label:"Rain sum"},
+      {icon:"🕰️",val:new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),label:"Updated"}
+    ]);
+
+    renderUmbrella(outfit.umbrella);
+    document.getElementById("outfitChips").innerHTML=outfit.chips.map(function(c){
+      return '<span class="chip '+c.c+'">'+c.i+' '+c.l+'</span>';
+    }).join("");
+    document.getElementById("outfitText").innerHTML=outfit.text;
+    
+    // Find current hour index to start hourly forecast
+    var currentHour = new Date().getHours();
+    var startIndex = 0;
+    for(var i=0; i<hourly.time.length; i++) {
+        if(new Date(hourly.time[i]).getHours() === currentHour) {
+            startIndex = i; break;
+        }
+    }
+    var next12Hours = {
+        time: hourly.time.slice(startIndex, startIndex + 12),
+        temperature_2m: hourly.temperature_2m.slice(startIndex, startIndex + 12),
+        weather_code: hourly.weather_code.slice(startIndex, startIndex + 12)
+    };
+    renderHourly(next12Hours);
+    
+    showState("result");
+  }).catch(function(err){setError("Failed to load weather",err.message||"Unexpected error. Check your connection.");});
+}
+
 function fetchWeather(){
   if(!navigator.geolocation){setError("Geolocation not supported","Your browser does not support location services. Try a modern browser like Chrome or Firefox.");return;}
   setLoading("Getting your location...");
@@ -134,52 +219,7 @@ function fetchWeather(){
       var parts=[a.suburb||a.neighbourhood||a.village||a.town||a.city_district,a.city||a.town||a.county,a.state].filter(Boolean);
       if(parts.length) locName=parts.join(", ");
     }).catch(function(){}).finally(function(){
-      setLoading("Fetching live weather...");
-      var url="https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon
-        +"&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,precipitation"
-        +"&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min,precipitation_sum"
-        +"&timezone=auto&forecast_days=1";
-      fetch(url).then(function(r){
-        if(!r.ok) throw new Error("Weather API error ("+r.status+")");
-        return r.json();
-      }).then(function(wx){
-        var cur=wx.current, daily=wx.daily;
-        var temp=Math.round(cur.temperature_2m);
-        var feels=cur.apparent_temperature;
-        var hum=cur.relative_humidity_2m;
-        var wind=cur.wind_speed_10m;
-        var wdir=cur.wind_direction_10m;
-        var code=cur.weather_code;
-        var prob=daily.precipitation_probability_max?daily.precipitation_probability_max[0]:null;
-        var mm=daily.precipitation_sum?daily.precipitation_sum[0]:0;
-        var tmax=Math.round(daily.temperature_2m_max?daily.temperature_2m_max[0]:temp);
-        var tmin=Math.round(daily.temperature_2m_min?daily.temperature_2m_min[0]:temp);
-        var decoded=decodeWMO(code);
-        var outfit=buildOutfit({temp:temp,feelsLike:feels,humidity:hum,windKph:wind,precipProb:prob,precipMm:mm,wmoCode:code});
-
-        document.getElementById("locName").textContent="📍 "+locName;
-        document.getElementById("locCoords").textContent=lat.toFixed(2)+"°N, "+lon.toFixed(2)+"°E";
-        document.getElementById("wxTemp").textContent=temp;
-        document.getElementById("wxIcon").textContent=decoded.e;
-        document.getElementById("wxCondition").textContent=decoded.e+" "+decoded.l;
-        document.getElementById("wxMeta").textContent="Feels like "+Math.round(feels)+"°C · "+tmin+"° / "+tmax+"° today";
-
-        renderStats([
-          {icon:"💧",val:hum+"%",label:"Humidity"},
-          {icon:"🌬️",val:Math.round(wind)+" km/h",label:"Wind "+windDir(wdir)},
-          {icon:"🌡️",val:tmin+"° / "+tmax+"°",label:"Low / High"},
-          {icon:"☔",val:prob!==null?prob+"%":(mm.toFixed(1)+" mm"),label:"Rain chance"},
-          {icon:"💦",val:mm.toFixed(1)+" mm",label:"Rain sum"},
-          {icon:"🕰️",val:new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),label:"Updated"}
-        ]);
-
-        renderUmbrella(outfit.umbrella);
-        document.getElementById("outfitChips").innerHTML=outfit.chips.map(function(c){
-          return '<span class="chip '+c.c+'">'+c.i+' '+c.l+'</span>';
-        }).join("");
-        document.getElementById("outfitText").innerHTML=outfit.text;
-        showState("result");
-      }).catch(function(err){setError("Failed to load weather",err.message||"Unexpected error. Check your connection.");});
+      fetchWeatherData(lat, lon, locName);
     });
   },function(err){
     if(err.code===1) setError("Location access denied","Please allow location access in your browser and try again. WeatherFit needs your location for hyper-local data.");
@@ -187,6 +227,34 @@ function fetchWeather(){
     else if(err.code===3) setError("Location timed out","Your device took too long to respond. Please try again.");
     else setError("Location error","An unexpected error occurred. Please try again.");
   },{timeout:10000,maximumAge:60000});
+}
+
+function fetchManualWeather() {
+  var input = document.getElementById("manualLocation");
+  if(!input || !input.value.trim()) return;
+  var loc = input.value.trim();
+  setLoading("Searching for '" + loc + "'...");
+  
+  fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(loc) + "&count=1&language=en&format=json")
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if(data.results && data.results.length > 0) {
+      var result = data.results[0];
+      var lat = result.latitude;
+      var lon = result.longitude;
+      var locName = result.name + (result.admin1 ? ", " + result.admin1 : "") + (result.country ? ", " + result.country : "");
+      fetchWeatherData(lat, lon, locName);
+    } else {
+      setError("Location not found", "Could not find any location matching '" + loc + "'. Try a different name.");
+    }
+  }).catch(function(err) {
+    setError("Search error", "Failed to search for location. Please check your connection.");
+  });
+}
+
+function openFeedback(e) {
+  e.preventDefault();
+  alert("Thank you for your feedback! This feature will be available soon.");
 }
 
 function shareWeather(){
@@ -198,9 +266,109 @@ function shareWeather(){
   else if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){alert("Copied to clipboard!");});}
 }
 
+// --- Customizations Logic ---
+var userGender = null;
+var wardrobe = JSON.parse(localStorage.getItem('atmosWardrobe')) || [];
+
+function mockGoogleSignIn() {
+    document.getElementById("googleSignInBtn").style.display = "none";
+    document.getElementById("genderSelection").style.display = "block";
+}
+
+function selectGender(gender) {
+    userGender = gender;
+    document.getElementById("authModal").style.display = "none";
+    loadAvatar();
+    renderWardrobe();
+}
+
+function loadAvatar() {
+    var iframe = document.getElementById("avatarFrame");
+    // Using Ready Player Me demo avatars for quick integration
+    var maleUrl = "https://demo.readyplayer.me/avatar?gender=male";
+    var femaleUrl = "https://demo.readyplayer.me/avatar?gender=female";
+    iframe.src = (userGender === 'female') ? femaleUrl : maleUrl;
+    setTimeout(function() {
+        var loader = document.getElementById("avatarLoading");
+        if(loader) loader.style.display = "none";
+    }, 2000);
+}
+
+function renderWardrobe() {
+    var container = document.getElementById("wardrobeItems");
+    if(!container) return;
+    container.innerHTML = wardrobe.map(function(item, index) {
+        return '<span class="chip chip-gray">' + item + ' <span style="cursor:pointer; color:red; margin-left:4px;" onclick="removeWardrobeItem(' + index + ')">x</span></span>';
+    }).join("");
+    localStorage.setItem('atmosWardrobe', JSON.stringify(wardrobe));
+}
+
+function addWardrobeItem() {
+    var input = document.getElementById("newWardrobeItem");
+    if(input.value.trim()) {
+        wardrobe.push(input.value.trim());
+        input.value = "";
+        renderWardrobe();
+    }
+}
+
+function removeWardrobeItem(index) {
+    wardrobe.splice(index, 1);
+    renderWardrobe();
+}
+
+function toggleChat() {
+    var panel = document.getElementById("chatPanel");
+    panel.style.display = panel.style.display === "none" ? "flex" : "none";
+}
+
+function sendMessage() {
+    var input = document.getElementById("chatInput");
+    var msg = input.value.trim();
+    if(!msg) return;
+    
+    var msgs = document.getElementById("chatMessages");
+    var userEl = document.createElement("div");
+    userEl.style = "background:var(--accent-light); padding:0.5rem; border-radius:var(--radius); align-self:flex-end; max-width:80%;";
+    userEl.textContent = msg;
+    msgs.appendChild(userEl);
+    
+    input.value = "";
+    msgs.scrollTop = msgs.scrollHeight;
+    
+    setTimeout(function() {
+        var aiEl = document.createElement("div");
+        aiEl.style = "background:var(--bg); padding:0.5rem; border-radius:var(--radius); max-width:80%;";
+        var lower = msg.toLowerCase();
+        if(lower.includes("weather")) aiEl.textContent = "I'm looking at the weather. It seems quite nice!";
+        else if(lower.includes("wear") || lower.includes("outfit")) aiEl.textContent = "Based on the weather and your wardrobe, a light jacket would be perfect.";
+        else aiEl.textContent = "That's interesting! I can help you with weather and outfit choices.";
+        msgs.appendChild(aiEl);
+        msgs.scrollTop = msgs.scrollHeight;
+    }, 1000);
+}
+
+window.onload = function() {
+    if(!userGender) {
+        var authModal = document.getElementById("authModal");
+        if(authModal) authModal.style.display = "flex";
+    }
+};
+
+setInterval(function() {
+    // Mock sudden weather change notification every 30s (5% chance) for demo purposes
+    if(Math.random() < 0.05 && document.getElementById("weatherResult").style.display !== "none") {
+        var banner = document.getElementById("notificationBanner");
+        if(banner) {
+            banner.style.display = "block";
+            setTimeout(function() { banner.style.display = "none"; }, 5000);
+        }
+    }
+}, 30000);
+
 // Auto-start if permission already granted
 if(navigator.permissions){
   navigator.permissions.query({name:"geolocation"}).then(function(s){
-    if(s.state==="granted") fetchWeather();
+    if(s.state==="granted" && userGender) fetchWeather();
   });
 }
