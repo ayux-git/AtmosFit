@@ -36,6 +36,21 @@
     </div>
   </div>
 
+  <!-- Feedback Modal -->
+  <div id="feedbackModal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+    <div class="card" style="padding: 2rem; max-width:400px; width:90%;">
+      <h2 style="margin-bottom:1rem;">Send Feedback</h2>
+      <textarea id="feedbackText" placeholder="Tell us what you think..."
+        style="width:100%; height:100px; padding:0.5rem; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:1rem; font-family:inherit;"></textarea>
+      <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+        <button class="btn" style="background:var(--card); border:1px solid var(--border);"
+          onclick="closeFeedback()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitFeedback()">Send</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification Banner -->
   <div id="notificationBanner"
     style="display:none; position:fixed; top:0; left:0; right:0; background:var(--accent); color:white; padding:1rem; text-align:center; z-index:1000; font-weight:bold;">
@@ -124,11 +139,13 @@
           <div class="outfit-chips" id="outfitChips"></div>
           <div class="outfit-text" id="outfitText">--</div>
         </div>
-        <div class="section-label">Your Avatar</div>
+        <div class="section-label">Outfit Stickers</div>
         <div class="card"
-          style="margin-bottom:1rem; height: 400px; overflow:hidden; position:relative; display:flex; justify-content:center; align-items:center; background:#f0f0f0;">
-          <iframe id="avatarFrame" style="width:100%; height:100%; border:none;" src=""></iframe>
-          <div id="avatarLoading" style="position:absolute; pointer-events:none;">Loading 3D Avatar...</div>
+          style="margin-bottom:1rem; padding:1.5rem; text-align:center; background:var(--accent-light);">
+          <div id="stickerContainer"
+            style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap; font-size:4rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
+            <!-- Stickers injected via JS -->
+          </div>
         </div>
 
         <div class="section-label">My Wardrobe</div>
@@ -136,7 +153,7 @@
           <div id="wardrobeItems" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
           </div>
           <div style="display:flex; gap:0.5rem;">
-            <input type="text" id="newWardrobeItem" placeholder="e.g. Red Beanie"
+            <input type="text" id="newWardrobeItem" placeholder="e.g. Hoodie"
               style="flex:1; padding:0.5rem; border:1px solid var(--border); border-radius:var(--radius);" />
             <button class="btn btn-primary" style="padding:0.5rem 1rem;" onclick="addWardrobeItem()">Add</button>
           </div>

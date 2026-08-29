@@ -201,6 +201,11 @@ function fetchWeatherData(lat, lon, locName) {
     };
     renderHourly(next12Hours);
     
+    // Save current weather for stickers
+    window.currentFeelsLike = feels;
+    window.currentCode = code;
+    renderStickers();
+    
     showState("result");
   }).catch(function(err){setError("Failed to load weather",err.message||"Unexpected error. Check your connection.");});
 }
@@ -254,7 +259,32 @@ function fetchManualWeather() {
 
 function openFeedback(e) {
   e.preventDefault();
-  alert("Thank you for your feedback! This feature will be available soon.");
+  var modal = document.getElementById("feedbackModal");
+  if(modal) modal.style.display = "flex";
+}
+
+function closeFeedback() {
+  var modal = document.getElementById("feedbackModal");
+  if(modal) modal.style.display = "none";
+  var input = document.getElementById("feedbackText");
+  if(input) input.value = "";
+}
+
+function submitFeedback() {
+  var input = document.getElementById("feedbackText");
+  if(!input || !input.value.trim()) return;
+  closeFeedback();
+  var banner = document.getElementById("notificationBanner");
+  if(banner) {
+      banner.style.background = "#22c55e";
+      banner.textContent = "Feedback sent successfully! Thank you.";
+      banner.style.display = "block";
+      setTimeout(function() { 
+        banner.style.display = "none"; 
+        banner.style.background = "var(--accent)";
+        banner.textContent = "Sudden Weather Change Alert!";
+      }, 3000);
+  }
 }
 
 function shareWeather(){
@@ -278,20 +308,37 @@ function mockGoogleSignIn() {
 function selectGender(gender) {
     userGender = gender;
     document.getElementById("authModal").style.display = "none";
-    loadAvatar();
+    renderStickers();
     renderWardrobe();
 }
 
-function loadAvatar() {
-    var iframe = document.getElementById("avatarFrame");
-    // Using Ready Player Me demo avatars for quick integration
-    var maleUrl = "https://demo.readyplayer.me/avatar?gender=male";
-    var femaleUrl = "https://demo.readyplayer.me/avatar?gender=female";
-    iframe.src = (userGender === 'female') ? femaleUrl : maleUrl;
-    setTimeout(function() {
-        var loader = document.getElementById("avatarLoading");
-        if(loader) loader.style.display = "none";
-    }, 2000);
+function renderStickers() {
+    var container = document.getElementById("stickerContainer");
+    if(!container) return;
+    if(!userGender || window.currentFeelsLike === undefined) {
+      container.innerHTML = "<span style='font-size:1rem;color:var(--muted);'>Please fetch weather and sign in to see stickers.</span>";
+      return;
+    }
+    
+    var feels = window.currentFeelsLike;
+    var stickers = [];
+    
+    if (feels < 10) {
+      stickers = userGender === 'female' ? ["🧥", "🧣", "🧤", "👢"] : ["🧥", "🧣", "🧤", "🥾"];
+    } else if (feels < 20) {
+      stickers = userGender === 'female' ? ["🧥", "👚", "👖", "👟"] : ["🧥", "👕", "👖", "👟"];
+    } else if (feels < 28) {
+      stickers = userGender === 'female' ? ["👗", "🕶️", "👡", "👜"] : ["👕", "🩳", "🕶️", "👟"];
+    } else {
+      stickers = userGender === 'female' ? ["🎽", "🩳", "👒", "👡"] : ["🎽", "🩳", "🧢", "🩴"];
+    }
+    
+    var isRainy = [51,53,55,61,63,65,80,81,82,95,96,99].indexOf(window.currentCode) > -1;
+    if (isRainy) stickers.push("☂️");
+    
+    container.innerHTML = stickers.map(function(s) {
+      return "<div style='transition:transform 0.2s;' onmouseover='this.style.transform=\"scale(1.2)\"' onmouseout='this.style.transform=\"scale(1)\"'>" + s + "</div>";
+    }).join("");
 }
 
 function renderWardrobe() {
