@@ -1,2 +1,2 @@
-# HACKATHON-PROJECT
+# AtmosFit
 Our First Hackathon Project
